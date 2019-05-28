@@ -11,7 +11,9 @@ const replace = require( 'replace-in-file' );
 
 // @TODO: Update this with the final path
 let directoryName = '',
-	projectType = 'theme';
+	projectType = 'theme',
+    repository = '',
+    cloneOptions = [];
 
 /*
 	Set up the CLI
@@ -20,6 +22,8 @@ let directoryName = '',
 const program = new commander.Command( packageJson.name )
 	.version( packageJson.version )
 	.arguments( '<project-type> <project-directory>' )
+    .option('--repository [repository]','Specify and alternative repository as the source.')
+    .option('--branch [branch]', 'Specify a specific branch, tag or revision of the repository to use.')
 	.usage( `${chalk.green( '<project-type> <project-directory>' )} [options]` )
 	.action( (type, name) => {
 		projectType   = type.toLowerCase();
@@ -119,10 +123,34 @@ if ( fs.existsSync( './' + directoryName ) ) {
 }
 
 /*
+    Set the repository to option or default from package.json
+ */
+
+if( program.repository ) {
+ // Display warning when using alternative repository
+    console.log( chalk.yellow.bold( '✘ Warning: ' ) + ' You have specified and alterative respository as the scaffold source. It may not be suitable for use with ' + packageJson.name );
+    repository = program.repository;
+
+} else {
+    repository = packageJson.tenup.repos[projectType];
+}
+
+/**
+    Set checkout option (branch/tag/revision)
+ */
+if( program.branch ){
+    cloneOptions = {
+        checkout: program.branch
+    };
+}
+
+
+
+/*
 	Clone the repo and get to work
 */
 
-clone( packageJson.tenup.repos[projectType], './' + directoryName,
+clone(repository, './' + directoryName, cloneOptions,
 	function( err ) {
 
 		if ( err ) {
